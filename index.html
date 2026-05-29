@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Where to Watch France Games in Houston</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Playfair Display -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2 {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Custom map styling to match modern UI */
+        #map {
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+        }
+        /* Custom Scrollbar for Sidebar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* French Tricolor Custom Leaflet Pin Styling */
+        .french-pin {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .french-pin-body {
+            width: 32px;
+            height: 44px;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            border: 2px solid white;
+            display: flex;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        /* Flag stripes inside the rotated teardrop */
+        .pin-stripe {
+            height: 100%;
+            width: 33.33%;
+            transform: rotate(45deg) scale(1.6);
+            transform-origin: center;
+        }
+        .pin-stripe-blue {
+            background-color: #002395;
+        }
+        .pin-stripe-white {
+            background-color: #ffffff;
+        }
+        .pin-stripe-red {
+            background-color: #ED2939;
+        }
+
+        /* Pin Center Star/Icon */
+        .pin-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+            color: #1e293b;
+            font-size: 10px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Pulsing Glow behind Marker when selected */
+        .french-pin.selected-pulse .french-pin-body {
+            animation: bounce-active 1s infinite alternate;
+            transform: rotate(-45deg) scale(1.35);
+            box-shadow: 0 0 15px rgba(237, 41, 57, 0.8), 0 0 30px rgba(0, 35, 149, 0.6);
+            border-color: #f1f5f9;
+            z-index: 999;
+        }
+
+        .french-pin.selected-pulse::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: rgba(0, 35, 149, 0.4);
+            border-radius: 50%;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%) scale(1);
+            animation: ring-pulse 1s infinite ease-out;
+            z-index: -1;
+        }
+
+        @keyframes bounce-active {
+            0% {
+                margin-top: 0px;
+            }
+            100% {
+                margin-top: -12px;
+            }
+        }
+
+        @keyframes ring-pulse {
+            0% {
+                transform: translateX(-50%) scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(-50%) scale(2.2);
+                opacity: 0;
+            }
+        }
+
+        /* Tailwind popup custom styles */
+        .leaflet-popup-content-wrapper {
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        .leaflet-popup-content {
+            margin: 0 !important;
+            width: 280px !important;
+        }
+        .leaflet-popup-tip-container {
+            margin-top: -1px;
+        }
+        .leaflet-popup-tip {
+            background: #ffffff !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 overflow-hidden flex flex-col h-screen w-screen">
+
+    <!-- Beautiful Header with French flag sub-stripes -->
+    <header class="bg-slate-900 text-white relative flex-shrink-0 shadow-lg border-b border-slate-800">
+        <!-- Tricolor Strip Accent -->
+        <div class="absolute top-0 left-0 w-full h-[6px] flex">
+            <div class="h-full w-1/3 bg-[#002395]"></div>
+            <div class="h-full w-1/3 bg-white"></div>
+            <div class="h-full w-1/3 bg-[#ED2939]"></div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:py-5 flex flex-col sm:flex-row items-center justify-between gap-4 mt-[6px]">
+            <div class="flex items-center space-x-4">
+                <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 flex items-center justify-center shadow-inner">
+                    <svg class="w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10" class="text-slate-700" opacity="0.4"/>
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
+                        Allez les Bleus! <span class="text-xs font-semibold bg-[#ED2939] text-white px-2 py-0.5 rounded-full uppercase tracking-wider">Houston Edition</span>
+                    </h1>
+                    <p class="text-xs sm:text-sm text-slate-400 italic font-medium">Where to watch France games in good company in Houston</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3 text-xs bg-slate-800/80 px-4 py-2.5 rounded-lg border border-slate-700/80 shadow-md">
+                <div class="flex space-x-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#002395]"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-white border border-slate-600"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#ED2939]"></span>
+                </div>
+                <span class="font-medium text-slate-300">Provided by the Consulate General of France in Houston</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Panel split into Sidebar and Map -->
+    <main class="flex-grow flex flex-col md:flex-row overflow-hidden relative">
+        
+        <!-- Left Column: Search & Venue Sidebar (Collapsible on Mobile) -->
+        <section class="w-full md:w-[380px] lg:w-[420px] bg-white border-r border-slate-200 flex flex-col flex-shrink-0 z-[10] shadow-xl relative">
+            
+            <!-- Search & Filters Container -->
+            <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                        <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                    </span>
+                    <input type="text" id="search-bar" placeholder="Search by name, type, or address..." 
+                           class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#002395]/40 focus:border-[#002395] transition-all shadow-sm">
+                </div>
+                
+                <!-- Category Tags / Filters -->
+                <div class="flex flex-wrap gap-1.5 mt-3">
+                    <button class="filter-btn active text-xs px-3 py-1.5 rounded-lg font-medium transition-all shadow-sm bg-slate-800 text-white" data-category="all">
+                        All Places
+                    </button>
+                    <button class="filter-btn text-xs px-3 py-1.5 rounded-lg font-medium transition-all shadow-sm bg-white text-slate-600 border border-slate-200 hover:bg-slate-50" data-category="cultural">
+                        Cultural Centers
+                    </button>
+                    <button class="filter-btn text-xs px-3 py-1.5 rounded-lg font-medium transition-all shadow-sm bg-white text-slate-600 border border-slate-200 hover:bg-slate-50" data-category="sports">
+                        Sports Bars & Parks
+                    </button>
+                    <button class="filter-btn text-xs px-3 py-1.5 rounded-lg font-medium transition-all shadow-sm bg-white text-slate-600 border border-slate-200 hover:bg-slate-50" data-category="dining">
+                        Dining & Bistros
+                    </button>
+                </div>
+            </div>
+
+            <!-- Venue Cards List -->
+            <div id="venue-list" class="flex-grow overflow-y-auto custom-scrollbar p-4 space-y-3">
+                <!-- Venue items injected dynamically by JS -->
+            </div>
+
+            <!-- Stats & Attribution Banner inside Sidebar -->
+            <div class="p-3 bg-slate-50 border-t border-slate-100 text-center text-xs text-slate-400 flex items-center justify-between">
+                <span>Created for French Football & Culture Fans</span>
+                <span class="font-semibold text-slate-500"><i class="fa-solid fa-futbol mr-1 text-[#002395]"></i>8 Top Spots</span>
+            </div>
+        </section>
+
+        <!-- Right Column: Leaflet Map container with details drawer fallback on mobile -->
+        <section class="flex-grow h-[50vh] md:h-full relative bg-slate-100">
+            <div id="map"></div>
+            
+            <!-- Map Floating Zoom/Target helper -->
+            <button onclick="resetMap()" class="absolute bottom-6 right-6 z-[1000] bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-xl px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 transition-all transform hover:scale-105">
+                <i class="fa-solid fa-map-location-dot text-[#002395]"></i>
+                Recenter Map
+            </button>
+        </section>
+    </main>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // Explicit coordinates added to the mock database for each venue
+        const venuesData = [
+            {
+                id: "alliance-francaise",
+                name: "Alliance Française de Houston",
+                category: "Cultural Center & Event Space",
+                categoryType: "cultural",
+                address: "427 Lovett Blvd, Houston, TX 77006",
+                description: "A nonprofit cultural organization dedicated to promoting French language and culture through classes, events, and community gatherings. Perfect for fans of a cultured, community-oriented viewing experience.",
+                website: "https://www.alliancehouston.org/events/",
+                lat: 29.74419,
+                lng: -95.38562,
+                iconType: "cultural"
+            },
+            {
+                id: "fifa-fan-fest",
+                name: "FIFA Fan Festival (East Houston)",
+                category: "Official World Cup 2026 Fan Zone",
+                categoryType: "sports",
+                address: "2301 Dallas St, Houston, TX 77003",
+                description: "The official hub for soccer fans to gather, watch matches live, and enjoy music, food, and activities during major tournaments. A massive, high-energy festival atmosphere.",
+                website: "https://www.fwc26houston.com/fifafanfestivalhou?gad_source=1",
+                lat: 29.74317,
+                lng: -95.35261,
+                iconType: "sports"
+            },
+            {
+                id: "texas-t-tavern",
+                name: "Texas T Tavern",
+                category: "Local Sports Bar & Grill",
+                categoryType: "sports",
+                address: "1535 Brittmoore Rd, Houston, TX 77043",
+                description: "A laid-back local sports pub known for its friendly neighborhood atmosphere, pool tables, great drink specials, and dedicated screen setups for international sporting events.",
+                website: "https://www.txttavern.com/",
+                lat: 29.79469,
+                lng: -95.55836,
+                iconType: "sports"
+            },
+            {
+                id: "phoenix-westheimer",
+                name: "The Phoenix on Westheimer",
+                category: "Brewpub & Sports Bar",
+                categoryType: "sports",
+                address: "1915 Westheimer Rd, Houston, TX 77098",
+                description: "A cozy, British-style brewpub offering a massive selection of craft beers, delicious comfort food, and soccer watch parties. Renowned home-base for soccer supporters in Montrose.",
+                website: "http://www.phoenixow.com/",
+                lat: 29.74338,
+                lng: -95.40632,
+                iconType: "sports"
+            },
+            {
+                id: "pitch-25",
+                name: "Pitch 25 Beer Park",
+                category: "Soccer Bar & Beer Garden (EaDo)",
+                categoryType: "sports",
+                address: "2120 Walker St, Houston, TX 77003",
+                description: "A massive sports-themed bar and beer garden in EaDo featuring an indoor soccer pitch, a huge draft list, and a highly vibrant match-day crowd. One of Houston's premier spots to watch live soccer.",
+                website: "https://pitch25.com/",
+                lat: 29.74602,
+                lng: -95.35374,
+                iconType: "sports"
+            },
+            {
+                id: "velvet-oak",
+                name: "Velvet Oak Tavern",
+                category: "Neighborhood Pub & Patio",
+                categoryType: "sports",
+                address: "2221 W Alabama St, Houston, TX 77098",
+                description: "A welcoming neighborhood pub boasting a spacious dog-friendly patio, excellent cocktails, and a great, intimate outdoor setting to catch high-stakes games in Montrose.",
+                website: "https://www.velvetoaktavern.com/",
+                lat: 29.73789,
+                lng: -95.41219,
+                iconType: "sports"
+            },
+            {
+                id: "social-beer-garden",
+                name: "Social Beer Garden HTX",
+                category: "Midtown Outdoor Beer Garden",
+                categoryType: "sports",
+                address: "3101 San Jacinto St, Houston, TX 77004",
+                description: "A lively, multi-level outdoor venue in Midtown featuring a giant outdoor LED screen for matches, backyard games, drink specials, and delicious local food trucks on site.",
+                website: "https://www.socialbeergardenhtx.com/",
+                lat: 29.74360,
+                lng: -95.37277,
+                iconType: "sports"
+            },
+            {
+                id: "restaurant-chardon",
+                name: "Restaurant Chardon",
+                category: "French Restaurant & Bistro",
+                categoryType: "dining",
+                address: "1717 Allen Pkwy, Houston, TX 77019",
+                description: "An elegant French bistro located in the Thompson Houston offering an authentic, high-end dining experience with classic recipes, pristine cocktails, and a sophisticated French atmosphere.",
+                website: "https://tinyurl.com/yxdy4fpp",
+                lat: 29.76121,
+                lng: -95.39201,
+                iconType: "dining"
+            }
+        ];
+
+        let map;
+        let markers = {};
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        // Initialize Map
+        function initMap() {
+            // Houston Downtown Centered
+            map = L.map('map', {
+                zoomControl: false,
+                scrollWheelZoom: true
+            }).setView([29.754, -95.3698], 12);
+
+            // Adding sophisticated dark-themed Map tiles to match French modern colors
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(map);
+
+            // Add custom Zoom Controls at top right
+            L.control.zoom({
+                position: 'topright'
+            }).addTo(map);
+
+            // Add Markers to Map
+            addVenueMarkers();
+        }
+
+        function createFrenchMarkerIcon(venue) {
+            // Determine an icon to display inside pin depending on category
+            let innerIcon = 'fa-beer';
+            if (venue.categoryType === 'cultural') innerIcon = 'fa-landmark';
+            if (venue.categoryType === 'dining') innerIcon = 'fa-utensils';
+            if (venue.id === 'fifa-fan-fest' || venue.id === 'pitch-25') innerIcon = 'fa-futbol';
+
+            return L.divIcon({
+                className: 'custom-leaflet-marker',
+                html: `
+                    <div class="french-pin" id="pin-${venue.id}">
+                        <div class="french-pin-body">
+                            <div class="pin-stripe pin-stripe-blue"></div>
+                            <div class="pin-stripe pin-stripe-white"></div>
+                            <div class="pin-stripe pin-stripe-red"></div>
+                            <span class="pin-icon">
+                                <i class="fa-solid ${innerIcon}"></i>
+                            </span>
+                        </div>
+                    </div>
+                `,
+                iconSize: [32, 44],
+                iconAnchor: [16, 44],
+                popupAnchor: [0, -42]
+            });
+        }
+
+        function getPopupHTML(venue) {
+            return `
+                <div class="bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-100 font-sans w-[280px]">
+                    <!-- Tricolor top border -->
+                    <div class="h-1 w-full flex">
+                        <div class="h-full w-1/3 bg-[#002395]"></div>
+                        <div class="h-full w-1/3 bg-white"></div>
+                        <div class="h-full w-1/3 bg-[#ED2939]"></div>
+                    </div>
+                    
+                    <div class="p-4">
+                        <span class="inline-block text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full mb-1">
+                            ${venue.category}
+                        </span>
+                        <h3 class="text-base font-bold text-slate-800 tracking-tight mb-1">${venue.name}</h3>
+                        <p class="text-[11px] text-slate-500 flex items-start gap-1 mb-2">
+                            <i class="fa-solid fa-location-dot mt-0.5 text-[#ED2939]"></i>
+                            <span>${venue.address}</span>
+                        </p>
+                        <p class="text-xs text-slate-600 leading-relaxed line-clamp-3 mb-3">
+                            ${venue.description}
+                        </p>
+                        <a href="${venue.website}" target="_blank" 
+                           class="inline-flex items-center justify-center w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs py-2 px-3 rounded-lg transition-all shadow-md hover:shadow-lg">
+                            <span>Visit Website</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square ml-1.5 text-[10px] opacity-80"></i>
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addVenueMarkers() {
+            // Clear existing markers if any
+            for (let id in markers) {
+                map.removeLayer(markers[id]);
+            }
+            markers = {};
+
+            venuesData.forEach(venue => {
+                const marker = L.marker([venue.lat, venue.lng], {
+                    icon: createFrenchMarkerIcon(venue)
+                });
+
+                // Set beautiful custom HTML Card popups
+                marker.bindPopup(getPopupHTML(venue), {
+                    closeButton: false,
+                    offset: L.point(0, -5)
+                });
+
+                // Register event listeners
+                marker.on('click', () => {
+                    focusVenueFromMap(venue.id);
+                });
+
+                marker.addTo(map);
+                markers[venue.id] = marker;
+            });
+        }
+
+        function renderSidebar(filteredList) {
+            const listContainer = document.getElementById('venue-list');
+            listContainer.innerHTML = '';
+
+            if (filteredList.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-12 px-4 bg-slate-50 border border-slate-100 rounded-xl">
+                        <div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-3">
+                            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                        </div>
+                        <h4 class="text-slate-700 font-semibold text-sm">No spots found</h4>
+                        <p class="text-xs text-slate-400 mt-1">Try adjusting your keyword filter or browse categories.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredList.forEach(venue => {
+                // Determine category icon background and style
+                let catIconBg = 'bg-blue-50 text-[#002395]';
+                let catIcon = 'fa-beer';
+                if (venue.categoryType === 'cultural') {
+                    catIconBg = 'bg-slate-100 text-slate-800';
+                    catIcon = 'fa-landmark';
+                } else if (venue.categoryType === 'dining') {
+                    catIconBg = 'bg-red-50 text-[#ED2939]';
+                    catIcon = 'fa-utensils';
+                }
+
+                const card = document.createElement('div');
+                card.className = `venue-card border border-slate-200/80 hover:border-[#002395]/40 rounded-xl p-4 bg-white hover:bg-slate-50/50 cursor-pointer shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group`;
+                card.id = `card-${venue.id}`;
+                card.setAttribute('onclick', `selectVenue('${venue.id}')`);
+
+                card.innerHTML = `
+                    <!-- Interactive Hover Strip indicators -->
+                    <div class="absolute left-0 top-0 h-full w-[4px] bg-slate-100 group-hover:bg-[#002395] transition-all duration-300"></div>
+
+                    <div class="flex items-start justify-between gap-2.5">
+                        <div class="flex-grow">
+                            <span class="inline-block text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-full ${catIconBg} mb-2">
+                                <i class="fa-solid ${catIcon} mr-1"></i>${venue.category}
+                            </span>
+                            <h3 class="font-bold text-slate-800 text-sm tracking-tight group-hover:text-[#002395] transition-colors leading-snug">
+                                ${venue.name}
+                            </h3>
+                            <p class="text-[11px] text-slate-500 flex items-start gap-1.5 mt-1">
+                                <i class="fa-solid fa-location-dot mt-0.5 text-slate-400"></i>
+                                <span>${venue.address}</span>
+                            </p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 rounded-lg border border-slate-100 flex items-center justify-center bg-slate-50 group-hover:bg-blue-50 group-hover:border-blue-100 transition-all text-slate-400 group-hover:text-[#002395]">
+                                <i class="fa-solid fa-chevron-right text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed mt-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100 group-hover:bg-white transition-colors">
+                        ${venue.description}
+                    </p>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+
+        // Filter elements based on selection state and search parameters
+        function filterData() {
+            let filtered = venuesData;
+
+            // Apply category filter
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(v => v.categoryType === currentFilter);
+            }
+
+            // Apply query search filter
+            if (searchQuery.trim() !== '') {
+                const query = searchQuery.toLowerCase().trim();
+                filtered = filtered.filter(v => {
+                    return v.name.toLowerCase().includes(query) || 
+                           v.description.toLowerCase().includes(query) ||
+                           v.address.toLowerCase().includes(query) ||
+                           v.category.toLowerCase().includes(query);
+                });
+            }
+
+            renderSidebar(filtered);
+            
+            // Re-render and adjust markers visibility based on filters
+            venuesData.forEach(venue => {
+                const marker = markers[venue.id];
+                if (filtered.some(f => f.id === venue.id)) {
+                    if (!map.hasLayer(marker)) marker.addTo(map);
+                } else {
+                    if (map.hasLayer(marker)) map.removeLayer(marker);
+                }
+            });
+        }
+
+        // When user clicks a venue card on the sidebar
+        function selectVenue(id) {
+            const venue = venuesData.find(v => v.id === id);
+            if (!venue) return;
+
+            // Scroll map and pan dynamically
+            map.setView([venue.lat, venue.lng], 15);
+            
+            // Delay popup to align with nice panning transition
+            setTimeout(() => {
+                markers[id].openPopup();
+                triggerMarkerPulse(id);
+            }, 300);
+
+            // Highlight Sidebar card
+            highlightSidebarCard(id);
+        }
+
+        // When user clicks a marker on the map directly
+        function focusVenueFromMap(id) {
+            highlightSidebarCard(id);
+            triggerMarkerPulse(id);
+            
+            // Scroll sidebar card into view smoothly
+            const cardElement = document.getElementById(`card-${id}`);
+            if (cardElement) {
+                cardElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Add bounce, glow, and shadow pulsing effect to the custom marker SVG pin
+        function triggerMarkerPulse(id) {
+            // Remove previous active classes from all markers
+            document.querySelectorAll('.french-pin').forEach(pin => {
+                pin.classList.remove('selected-pulse');
+            });
+
+            // Apply to specific pin target element
+            const pinElement = document.getElementById(`pin-${id}`);
+            if (pinElement) {
+                pinElement.classList.add('selected-pulse');
+            }
+        }
+
+        // Stylize the active card in the left list panel
+        function highlightSidebarCard(id) {
+            document.querySelectorAll('.venue-card').forEach(card => {
+                card.classList.remove('border-[#002395]', 'bg-slate-50', 'ring-1', 'ring-[#002395]/10');
+                // restore background
+                card.classList.add('border-slate-200/80', 'bg-white');
+            });
+
+            const activeCard = document.getElementById(`card-${id}`);
+            if (activeCard) {
+                activeCard.classList.remove('border-slate-200/80', 'bg-white');
+                activeCard.classList.add('border-[#002395]', 'bg-blue-50/10', 'ring-1', 'ring-[#002395]/10');
+            }
+        }
+
+        // Reset the main map viewport to capture all nodes
+        function resetMap() {
+            // Remove pulsers
+            document.querySelectorAll('.french-pin').forEach(pin => {
+                pin.classList.remove('selected-pulse');
+            });
+
+            // Zoom map back to focus everything
+            map.setView([29.754, -95.3698], 12);
+            map.closePopup();
+
+            // Clear sidebar selections
+            document.querySelectorAll('.venue-card').forEach(card => {
+                card.classList.remove('border-[#002395]', 'bg-slate-50', 'ring-1', 'ring-[#002395]/10');
+                card.classList.add('border-slate-200/80', 'bg-white');
+            });
+        }
+
+        window.onload = function() {
+            // Load and build elements
+            initMap();
+            renderSidebar(venuesData);
+
+            // Hook up Search Bar typing search filter
+            const searchBar = document.getElementById('search-bar');
+            searchBar.addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                filterData();
+            });
+
+            // Hook up Category Filtering buttons
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Update classes
+                    filterBtns.forEach(b => {
+                        b.classList.remove('active', 'bg-slate-800', 'text-white');
+                        b.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200', 'hover:bg-slate-50');
+                    });
+                    
+                    btn.classList.add('active', 'bg-slate-800', 'text-white');
+                    btn.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200', 'hover:bg-slate-50');
+
+                    currentFilter = btn.getAttribute('data-category');
+                    filterData();
+                });
+            });
+        }
+    </script>
+</body>
+</html>
